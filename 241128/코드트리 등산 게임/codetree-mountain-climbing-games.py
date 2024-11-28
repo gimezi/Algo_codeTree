@@ -3,23 +3,42 @@ class MountainCalculator:
         self.mountains = []
         self.dp = []  # 각 위치의 LIS 길이 저장
         
+    def calculate_dp(self, start_idx):
+        tails = [0] * len(self.mountains)
+        size = 0
+        
+        # start_idx 이전까지는 이미 계산되어 있음
+        for i in range(start_idx, len(self.mountains)):
+            if i == 0:
+                tails[0] = self.mountains[i]
+                size = 1
+                continue
+                
+            if self.mountains[i] > tails[size-1]:
+                tails[size] = self.mountains[i]
+                self.dp[i] = size
+                size += 1
+            else:
+                # 이진 탐색으로 위치 찾기
+                left, right = 0, size
+                while left < right:
+                    mid = (left + right) // 2
+                    if tails[mid] >= self.mountains[i]:
+                        right = mid
+                    else:
+                        left = mid + 1
+                tails[left] = self.mountains[i]
+                self.dp[i] = left
+    
     def init_mountains(self, mountains):
         self.mountains = mountains
         self.dp = [0] * len(mountains)
-        # 초기 dp 계산
-        for i in range(1, len(mountains)):
-            for j in range(0, i):
-                if mountains[i] > mountains[j]:
-                    self.dp[i] = max(self.dp[i], self.dp[j] + 1)
+        self.calculate_dp(0)
     
     def add_mountain(self, height):
         self.mountains.append(height)
         self.dp.append(0)
-        # 새로 추가된 산에 대해서만 dp 계산
-        i = len(self.mountains) - 1
-        for j in range(0, i):
-            if self.mountains[i] > self.mountains[j]:
-                self.dp[i] = max(self.dp[i], self.dp[j] + 1)
+        self.calculate_dp(len(self.mountains)-1)
     
     def remove_mountain(self):
         if self.mountains:
