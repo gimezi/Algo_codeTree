@@ -1,68 +1,63 @@
-class MountainCalculator:
-    def __init__(self):
-        self.mountains = []
-        self.dp = []  # 각 위치의 LIS 길이 저장
-        
-    def calculate_dp(self):
-        n = len(self.mountains)
-        self.dp = [0] * n
-        tails = [0] * n
-        size = 0
-        
-        for i in range(1, n):  # 1부터 시작
-            if i == 1:
-                if self.mountains[i] > self.mountains[0]:
-                    tails[size] = self.mountains[i]
-                    self.dp[i] = 1
-                    size += 1
-                continue
-                
-            if self.mountains[i] > tails[size-1] and size > 0:
-                tails[size] = self.mountains[i]
-                self.dp[i] = size + 1
-                size += 1
-            else:
-                # 이진 탐색으로 위치 찾기
-                left, right = 0, size
-                while left < right:
-                    mid = (left + right) // 2
-                    if tails[mid] >= self.mountains[i]:
-                        right = mid
-                    else:
-                        left = mid + 1
-                tails[left] = self.mountains[i]
-                self.dp[i] = left + 1
+def get_max_score(mountains, cable_car_idx):
+    n = len(mountains)
     
-    def init_mountains(self, mountains):
-        self.mountains = mountains
-        self.calculate_dp()
+    # dp[i]: i번째 산까지의 최장 증가 수열 길이
+    dp = [0] * n
     
-    def add_mountain(self, height):
-        self.mountains.append(height)
-        self.calculate_dp()
+    # 케이블카 이전까지의 최장 증가 수열 계산
+    for i in range(1, n):
+        for j in range(i):
+            if mountains[i] > mountains[j]:
+                dp[i] = max(dp[i], dp[j] + 1)
     
-    def remove_mountain(self):
-        if self.mountains:
-            self.mountains.pop()
-            if self.mountains:  # 산이 남아있으면 다시 계산
-                self.calculate_dp()
-            else:
-                self.dp = []
+    # 케이블카에서 시작하는 최장 증가 수열 중 가장 큰 값 찾기
+    max_after = 0  # 케이블카 이후 최대 증가 수열 길이
+    max_height = 0  # 최종 도달 가능한 최대 높이
     
-    def calculate(self, idx):
-        h_idx = self.dp.index(max(self.dp)) if max(self.dp) > 0 else 0
-        print(1000000 * self.dp[idx] + 1000000 + 1000000 * max(self.dp) + self.mountains[h_idx])
+    for i in range(cable_car_idx + 1, n):
+        current = 0
+        for j in range(cable_car_idx, i):
+            if mountains[i] > mountains[j]:
+                current = max(current, dp[j] + 1)
+        if current > max_after:
+            max_after = current
+            max_height = mountains[i]
+        elif current == max_after:
+            max_height = max(max_height, mountains[i])
+    
+    # 점수 계산
+    score = 0
+    # 최초 등산 점수
+    max_first = dp[cable_car_idx]
+    if max_first > 0:
+        score += 1000000 * max_first
+    
+    # 케이블카 점수
+    if max_after > 0:
+        score += 1000000  # 케이블카 이용
+        score += 1000000 * max_after  # 케이블카 이후 등산
+        max_height = max(max_height, mountains[cable_car_idx])
+    else:
+        max_height = mountains[cable_car_idx]
+    
+    # 최종 높이 점수
+    score += max_height
+    
+    return score
 
-calculator = MountainCalculator()
 n = int(input())
+mountains = []
 
 for _ in range(n):
     commands = list(map(int, input().split()))
-    if commands[0] == 100:
-        calculator.init_mountains(commands[2:])
-    elif commands[0] == 200:
-        calculator.add_mountain(commands[1])
-    elif commands[0] == 300:
-        calculator.remove_mountain()
-    else:
-        calculator.calculate(commands[1] - 1)
+    if commands[0] == 100:  # 빅뱅
+        num_mountains = commands[1]
+        mountains = commands[2:]
+    elif commands[0] == 200:  # 우공이산
+        mountains.append(commands[1])
+    elif commands[0] == 300:  # 지진
+        if mountains:
+            mountains.pop()
+    else:  # 등산 시뮬레이션
+        m_index = commands[1]
+        print(get_max_score(mountains, m_index - 1))
