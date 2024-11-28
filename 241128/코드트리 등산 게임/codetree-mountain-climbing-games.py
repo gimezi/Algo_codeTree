@@ -22,4 +22,4 @@ for _ in range(n):
     elif commands[0] == 300:
         mountains.pop()
     else:
-        calculate(mountains, commands[1] - 1, num_of_mountains)
+        calculate(mountains, commands[1] - 1, len(mountains))
